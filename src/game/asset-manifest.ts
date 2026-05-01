@@ -19,17 +19,11 @@
  *   core-*   → GPU (Pixi) — in-game UI atlases
  *   fx-*     → GPU (Pixi) — particles, effects, VFX spritesheets
  *   audio-*  → Howler     — sound effects, music
+ *   data-*   → DOM        — JSON config files
  *
  * Game atlases MUST use scene-* or core-* to be accessible via Pixi
  * (createSprite, getTexture, hasSheet). Using theme-* for game atlases
  * will silently fail — Pixi never sees them.
- *
- * Bundle names must match [a-z][a-z0-9-]* — only lowercase, digits, hyphens.
- * NO underscores. Asset file paths can have underscores; bundle names cannot.
- *
- * For single-asset GPU bundles, set alias = bundle name so Pixi lookups work:
- *   { name: 'scene-tiles', assets: [{ alias: 'scene-tiles', src: 'atlas-tiles.json' }] }
- *   → gpuLoader.createSprite('scene-tiles', 'frame-name.png')
  */
 
 import type { Manifest } from '@wolfgames/components/core';
@@ -40,25 +34,50 @@ export const manifest: Manifest = {
   cdnBase: LOCAL_ASSET_PATH,
   localBase: LOCAL_ASSET_PATH,
   bundles: [
-    // DOM — branding logo shown on loading screen (pre-GPU)
+    // ── DOM — branding logo shown on loading screen (pre-GPU)
     {
       name: 'theme-branding',
       assets: [{ alias: 'atlas-branding-wolf', src: 'atlas-branding-wolf.json' }],
     },
 
-    // When adding bundles for your game, use the appropriate prefix:
-    //
-    //   scene-*  → GPU spritesheets, backgrounds, tiles
-    //   core-*   → GPU in-game UI atlases
-    //   fx-*     → GPU particles, effects, VFX
-    //   audio-*  → Howler sound effects and music
-    //   data-*   → JSON config files
-    //   boot-*   → DOM pre-engine splash assets
-    //
-    // Examples:
-    //   { name: 'scene-tiles-mygame', assets: [{ alias: 'scene-tiles-mygame', src: 'atlas-tiles-mygame.json' }] },
-    //   { name: 'fx-blast', assets: [{ alias: 'fx-blast', src: 'vfx-blast.json' }] },
-    //   { name: 'audio-sfx-mygame', assets: [{ alias: 'audio-sfx-mygame', src: 'sfx-mygame.json' }] },
-    //   { name: 'audio-music-mygame', assets: [{ alias: 'audio-music-mygame', src: 'music-mygame.json' }] },
+    // ── GPU (Pixi) — Mystery Munchies bubble grid + blockers + UI
+    {
+      name: 'scene-bubbles',
+      assets: [{ alias: 'scene-bubbles', src: 'atlas-bubbles-mystery-munchies.json' }],
+    },
+    {
+      name: 'scene-blockers',
+      assets: [{ alias: 'scene-blockers', src: 'atlas-blockers-mystery-munchies.json' }],
+    },
+    {
+      name: 'scene-ui',
+      assets: [{ alias: 'scene-ui', src: 'atlas-ui-mystery-munchies.json' }],
+    },
+
+    // ── GPU (Pixi) — VFX
+    {
+      name: 'fx-pop',
+      assets: [{ alias: 'fx-pop', src: 'vfx-pop-mystery-munchies.json' }],
+    },
+    {
+      name: 'fx-power',
+      assets: [{ alias: 'fx-power', src: 'vfx-power-mystery-munchies.json' }],
+    },
+
+    // ── Howler — game audio
+    {
+      name: 'audio-sfx-mysterymunchies',
+      assets: [{ alias: 'audio-sfx-mysterymunchies', src: 'sfx-mystery-munchies.json' }],
+    },
+    {
+      name: 'audio-music-mysterymunchies',
+      assets: [{ alias: 'audio-music-mysterymunchies', src: 'music-mystery-munchies.json' }],
+    },
+
+    // ── DOM data — level JSON
+    {
+      name: 'data-levels',
+      assets: [{ alias: 'data-levels', src: 'data-levels-mystery-munchies.json' }],
+    },
   ],
 };

@@ -1,0 +1,195 @@
+# phase-summary.yml — Per-phase structured handoff
+# Each phase writes under its own id key. Downstream phases read only the keys they need.
+# Generated per run in pipeline/runs/run-<NN>/
+
+pass_gate:
+  status: complete
+  pass: core
+  previous_pass: null
+  previous_run: null
+  previous_pass_stable: true
+  gate_decision: skipped_core
+  notes: "core pass requires no N-1 check; gate passed unconditionally"
+  carry_forward: {}
+
+prime:
+  status: complete
+  project: "Mystery Munchies: Scooby's Bubble Pop"
+  stack: "pixi + solidjs + gsap + bun (vite, vitest)"
+  existing_features: 10
+  dom_overlays:
+    - "WolfGamesLogo (bottom, ~64px reserved)"
+  carry_forward:
+    target_device: "iPhone reference portrait 390x844 (dvh)"
+    game_greenfield: true
+    reserved_bottom_px: 64
+    reserved_top_px: 0
+    game_controller_stub: true
+    stack_gaps: []
+    host_rules_missing: true
+
+analyze:
+  status: complete
+  features:
+    exists: 4
+    partial: 1
+    new: 18
+    conflict: 3
+    content_gap: 3
+  conflict_breakdown:
+    reuse: 0
+    adapt: 3
+    replace: 0
+  high_risk: [game-controller-pixi, bubble-grid, cluster-pop-mechanic, win-loss-sequences, game-controller-stub-conflict]
+  medium_risk: [ecs-plugin, power-bubbles, blocker-entities, mystery-meter, clue-fragment, scooby-companion, gravity-fill, level-generation, tap-counter-system, loading-screen-theme, start-screen-theme, results-screen-theme, start-screen-controller-conflict]
+  open_questions: 4
+  carry_forward:
+    critical_integration_point: game-controller-pixi
+    transformative_hint: true
+
+plan:
+  status: complete
+  gdd_type: additive
+  batches: 8
+  features: 29
+  new_files: 26
+  modified_files: 9
+  viewport_budget:
+    hud_top: 60
+    board: 520
+    companion_bottom: 80
+    dom_reserved_bottom: 64
+    total: 744
+    available: 844
+    cell_stride_px: 48
+  resolved_questions: 4
+  out_of_pass_cos: []
+  warnings:
+    - "collision-resolved:game-controller-dom — skill-wins (guardrail #1); dom-stub replaced with Pixi in batch 1"
+    - "collision-resolved:start-screen-dom — skill-wins (guardrail #1); dom-createElement replaced with Pixi in batch 8"
+    - "collision-resolved:results-copy — skill-wins (adapt); Zoinks-Shaggy copy adopted, Game-Over dropped; propagated to batch 5"
+    - "collision-resolved:screen-ids — skill-wins (scaffold-state critical); chapter interstitials implemented as overlays not new screen IDs"
+    - "collision-resolved:ad-continuation — skill-wins (no-ad-sdk, soft, default); Watch-Ad deferred; honest Coming-Soon UX in batch 5"
+    - "self-audit:src-core-readonly — PASS"
+    - "self-audit:no-stubs-placeholders — PASS"
+    - "self-audit:slug-substitution-complete — PASS"
+    - "self-audit:collision-resolution-coverage — PASS"
+    - "self-audit:integration-file-coverage — PASS"
+    - "runcontext_ownership: viewport-budget was empty before 30-plan; written clean as sole owner"
+  resolved_questions_scalars:
+    q-game-name: mystery-munchies
+    q-hand-crafted-level-format: "grid-2d-array-with-color-chars"
+    q-continue-system-ad-integration: omit-for-core-pass
+    q-scooby-snack-currency: visual-only-no-wallet
+  carry_forward:
+    game_slug: mystery-munchies
+    hook_batch: 2
+    priority_ordering_applied: true
+    cos_deferred_to_batch:
+      pattern-busters: deferred-to-pass-secondary
+    viewport_budget_derived_from: greenfield_defaults
+    critical_integration_point: game-controller-pixi
+
+implement:
+  status: complete
+  batches_completed: "8/8"
+  files_modified: 11
+  files_created: 65
+  tests_added: 23
+  features_audited: 29
+  issues_found: 6
+  fixes_applied: 6
+  deferred:
+    - id: "watch-ad-sdk"
+      severity: low
+      reason: "q-continue-system-ad-integration=omit-for-core-pass — Watch Ad button visible with Coming-Soon UX (honest absent-feature, not a stub per guardrail #15)"
+    - id: "scooby-snack-wallet"
+      severity: low
+      reason: "q-scooby-snack-currency=visual-only-no-wallet — currency persistence deferred to meta pass; +5 Snacks button surfaces Coming-Soon toast"
+    - id: "real-spritesheet-atlases"
+      severity: low
+      reason: "core-pass ships Graphics + Text fallbacks for bubbles/blockers/companion (no atlas assets shipped). Distinct color tints + glyph labels satisfy canvas CoS visual-distinctness floor; atlas swap is mechanical when assets land."
+    - id: "10-step-win-sequence-strict-stagger"
+      severity: low
+      reason: "Step ordering + delay table (winLossSequences.ts) ships and is unit-tested. Per-step renderer dispatch (companion victory hop, board-dim, score-tally) is partially wired via existing observers; full per-step orchestration deferred to player-flow phase."
+  blockers: []
+  ux_gaps:
+    - "batch-3: lone-tap on empty cell is silently ignored — wobble suppressed for empty cells; consider a board-pulse hint instead"
+    - "batch-7: power bubble activation chain not yet auto-cascaded (chain mechanism wired but recursive activation deferred to secondary pass per pattern-busters CoS gating)"
+  cos_gaps:
+    - { batch_id: 7, cos_id: "pattern-busters", issue: "pattern-busters CoS exit-criteria deferred to pass=secondary per plan.carry_forward.cos_deferred_to_batch — only mechanic shipped (power spawn + 3x3 blast); full power activation chain depth-3 cascade verified at logic level only" }
+  cos_findings:
+    - { batch_id: 1, cos_id: "core-interaction", lens: "discoverability", status: "ok", note: "no interaction yet — foundation only; pointertap stub registered" }
+    - { batch_id: 2, cos_id: "canvas", lens: "feedback", status: "ok", note: "8x10 grid renders at 48px stride on 390x844 viewport; 5 distinct colors + glyph labels for colorblind support" }
+    - { batch_id: 3, cos_id: "core-interaction", lens: "feedback", status: "ok", note: "wobble fires on lone tap within 100ms; pop fires on cluster >= 2; input blocked during animating-pop/animating-fall" }
+    - { batch_id: 3, cos_id: "core-interaction", lens: "affordance", status: "ok", note: "interaction-archetype.md authored with gesture, pointer sequence, cancel behavior, wobble spec, feel description" }
+    - { batch_id: 4, cos_id: "scoring", lens: "discoverability", status: "ok", note: "multiplicative score (size × basePts × chainMultiplier); skilled vs beginner spread >= 3x verified in tests" }
+    - { batch_id: 4, cos_id: "animated-dynamics", lens: "feedback", status: "ok", note: "gravity uses power2.out easing; only moved entities animate (board-diff via stable entity ids)" }
+    - { batch_id: 5, cos_id: "animated-dynamics", lens: "feedback", status: "ok", note: "win sequence 10 steps + loss sequence 8 steps (data tables tested); board-phase observer drives goto('results')" }
+    - { batch_id: 5, cos_id: "scoring", lens: "discoverability", status: "ok", note: "stars 1/2/3 derived from tapsRemaining vs thresholds; results screen shows stars" }
+    - { batch_id: 6, cos_id: "animated-dynamics", lens: "feedback", status: "ok", note: "mystery meter shimmer on update; companion bark/victory/sad reactions; audio dispatched safely (no-op until unlocked)" }
+    - { batch_id: 7, cos_id: "canvas", lens: "feedback", status: "ok", note: "power bubble overlay ring; ghost-barrier and crate-blocker rendered with distinct shapes/colors; clue parchment fades with reveal progress" }
+  warnings:
+    - "copy-mismatch:loss-screen-options — gdd=Watch a Short Clip vs code=Watch Ad — +5 Taps (src/game/screens/ResultsScreen.tsx:76)"
+    - "copy-mismatch:loss-screen-options — gdd=Use Scooby Snacks vs code=Spend +5 Snacks — +5 Taps (src/game/screens/ResultsScreen.tsx:78)"
+    - "copy-mismatch:loading-screen-brand — gdd=Mystery Inc. logo vs code=Mystery Munchies + 'Mystery Inc. is rounding up the gang...' (src/game/screens/LoadingScreen.tsx:114). Brand intent preserved; resolve in 50-verify content-fidelity step."
+  carry_forward:
+    actual_hook_batch: 2
+    viewport_budget_changed: false
+    deferred_cos:
+      - "pattern-busters"
+    batch_boundary_violations: []
+    unfixed_ux_issues:
+      - "batch-3: empty-cell tap silently ignored (no wobble target)"
+      - "batch-7: power chain auto-cascade (depth 3) not auto-fired on overlapping clusters"
+    asset_fallbacks_applied:
+      - "bubbles:graphics-circle-with-glyph"
+      - "blockers:graphics-rounded-rect"
+      - "companion:graphics-rounded-rect-with-eyes"
+      - "clue-parchment:graphics-rounded-rect"
+      - "mystery-machine:graphics-roundrect-with-windows"
+      - "scooby-peek:graphics-with-bouncing-tween"
+      - "stars:text-asterisks"
+      - "loading-bone:emoji-text"
+    priority_reorder_applied: false
+    dod_failures: []
+
+integrate:
+  status: pending
+  viewport_rederived: false
+  orphans_wired: []
+  orphans_deleted: []
+  fallbacks_unified: []
+  unreachable: []
+  warnings: []
+  carry_forward: {}
+
+player_flow:
+  status: pending
+  journey_walked: false
+  transitions_checked: []
+  fun_test_result: ""
+  issues_found: 0
+  fixes_applied: 0
+  carry_forward: {}
+
+verify:
+  status: pending
+  build: ""
+  tests_passing: 0
+  tests_total: 0
+  fix_cycles: 0
+  playability: ""
+  remaining_issues: []
+  carry_forward: {}
+
+stabilize:
+  status: pending
+  completion_ratio: ""
+  test_count: 0
+  known_issues: []
+  cos_failed: []
+  cos_rationale: []
+  completeness_gaps: []
+  pipeline_status: ""
+  carry_forward: {}

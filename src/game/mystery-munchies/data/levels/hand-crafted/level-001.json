@@ -1,0 +1,21 @@
+{
+  "id": "level-001",
+  "chapter": 1,
+  "tapLimit": 20,
+  "refillEnabled": false,
+  "grid": [
+    ["r", "r", "b", "b", "g", "g", "y", "y"],
+    ["r", "r", "b", "b", "g", "g", "y", "y"],
+    ["p", "p", "r", "r", "b", "b", "g", "g"],
+    ["p", "p", "r", "r", "b", "b", "g", "g"],
+    ["y", "y", "p", "p", "r", "r", "b", "b"],
+    ["y", "y", "p", "p", "r", "r", "b", "b"],
+    ["g", "g", "y", "y", "p", "p", "r", "r"],
+    ["g", "g", "y", "y", "p", "p", "r", "r"],
+    ["b", "b", "g", "g", "y", "y", "p", "p"],
+    ["b", "b", "g", "g", "y", "y", "p", "p"]
+  ],
+  "blockers": [],
+  "clueAsset": "data-clue-chapter-01",
+  "starThresholds": { "one": 1, "two": 5, "three": 10 }
+}

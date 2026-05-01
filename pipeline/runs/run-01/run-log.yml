@@ -1,0 +1,20 @@
+run: "01"
+pipeline_version: "0.3.13"
+pass: "core"
+started: "2026-05-01T22:42:27Z"
+config:
+  think_only: false
+  trace: false
+  skip_groups: []
+  allow_skip_pass: false
+
+phases:
+  - id: pass-gate
+    status: complete
+    summary: "core pass requires no N-1 check; gate passed unconditionally"
+  - id: prime
+    status: complete
+    summary: "stack detected: pixi+solidjs+gsap+bun; game is greenfield; host_rules_missing: true"
+
+finished: ""
+status: ""

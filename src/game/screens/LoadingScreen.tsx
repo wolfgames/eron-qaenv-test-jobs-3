@@ -94,31 +94,46 @@ export function LoadingScreen() {
   });
 
   return (
-    <div class="fixed inset-0 flex flex-col items-center justify-center bg-[#BCE083]">
+    <div class="fixed inset-0 flex flex-col items-center justify-center bg-[#5B3A8A]">
       <Show
         when={failedBundles().length === 0}
         fallback={
           <div class="text-center max-w-sm px-6">
-            <p class="text-lg font-semibold text-gray-800 mb-2">Unable to load</p>
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-lg font-semibold text-[#FFC857] mb-2">Unable to load</p>
+            <p class="text-sm text-white/70 mb-4">
               Failed to load: {failedBundles().join(', ')}
             </p>
             <button
               onClick={retryFailed}
-              class="px-6 py-3 bg-white text-gray-800 rounded-xl font-medium shadow-md hover:shadow-lg active:scale-95 transition-all"
+              class="px-6 py-3 bg-[#FFC857] text-[#1A1030] rounded-xl font-medium shadow-md hover:shadow-lg active:scale-95 transition-all"
             >
               Retry
             </button>
           </div>
         }
       >
-        <Spinner size="lg" class="w-24 h-24 text-gray-800" />
-        <div class="mt-8 w-64 h-2 bg-white/30 rounded-full overflow-hidden">
-          <div
-            class="h-full bg-gray-800 rounded-full transition-all duration-300"
-            style={{ width: `${progress()}%` }}
-          />
+        {/* Mystery Inc. branding — never a generic 'Loading…' alone. */}
+        <h1 class="text-3xl font-extrabold text-[#FFC857] mb-1 tracking-wide">
+          Mystery Munchies
+        </h1>
+        <p class="text-white/80 text-sm mb-6">
+          Mystery Inc. is rounding up the gang...
+        </p>
+        <Spinner size="lg" class="w-16 h-16 text-[#FFC857]" />
+        {/* Bone-shaped progress bar (rounded ends, gold fill) */}
+        <div class="mt-6 flex items-center gap-2">
+          <span class="text-2xl" aria-hidden="true">🦴</span>
+          <div class="w-56 h-3 bg-white/20 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-[#FFC857] rounded-full transition-all duration-300"
+              style={{ width: `${progress()}%` }}
+            />
+          </div>
+          <span class="text-2xl" aria-hidden="true">🦴</span>
         </div>
+        <p class="mt-3 text-xs text-white/60">
+          Loading {Math.round(progress())}%...
+        </p>
       </Show>
 
       {themeLoaded() && (

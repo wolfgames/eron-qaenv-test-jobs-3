@@ -9,6 +9,7 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     globals: false,
+    setupFiles: ["tests/mystery-munchies/setup.ts"],
   },
   resolve: {
     alias: {
