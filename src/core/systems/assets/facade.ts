@@ -51,6 +51,7 @@ function bundlesByPrefix(manifest: Manifest, prefix: string): string[] {
 
 export interface AssetCoordinatorFacade {
   loadingStateSignal: { get: () => LoadingState; set: (v: LoadingState) => void; subscribe: (fn: (v: LoadingState) => void) => () => void };
+  loadingState: () => LoadingState;
   ready: { get: () => boolean; set: (v: boolean) => void; subscribe: (fn: (v: boolean) => void) => () => void };
   gpuReady: { get: () => boolean; set: (v: boolean) => void; subscribe: (fn: (v: boolean) => void) => () => void };
   isLoaded(bundleName: string): boolean;
@@ -66,9 +67,11 @@ export interface AssetCoordinatorFacade {
   loadAudio(onProgress?: ProgressCallback): Promise<void>;
   loadScene(name: string, onProgress?: ProgressCallback): Promise<void>;
   initGpu(): Promise<void>;
+  getGpuLoader<T = unknown>(): T | null;
   unloadBundle(name: string): void;
   unloadBundles(names: string[]): void;
   unloadScene(sceneName: string): void;
+  dispose(): void;
   audio: {
     play(channel: string, sprite?: string, opts?: { volume?: number }): number;
     stop(channel: string, id?: number): void;
@@ -156,15 +159,27 @@ export function createCoordinatorFacade(manifest: Manifest): AssetCoordinatorFac
     if (loader && typeof (loader as { unloadBundle?: (n: string) => void }).unloadBundle === 'function') {
       (loader as { unloadBundle: (n: string) => void }).unloadBundle(name);
     }
+    // Also update coordinator state if it has unloadBundle method
+    if (coordinator && typeof (coordinator as { unloadBundle?: (n: string) => void }).unloadBundle === 'function') {
+      (coordinator as { unloadBundle: (n: string) => void }).unloadBundle(name);
+    }
   };
 
   const unloadBundles = (names: string[]) => {
     for (const name of names) unloadBundle(name);
+    // Also update coordinator state if it has unloadBundles method
+    if (coordinator && typeof (coordinator as { unloadBundles?: (names: string[]) => void }).unloadBundles === 'function') {
+      (coordinator as { unloadBundles: (names: string[]) => void }).unloadBundles(names);
+    }
   };
 
   const unloadScene = (sceneName: string) => {
     const bundleName = sceneName.startsWith('scene-') ? sceneName : `scene-${sceneName}`;
     unloadBundle(bundleName);
+    // Also update coordinator state if it has unloadScene method
+    if (coordinator && typeof (coordinator as { unloadScene?: (name: string) => void }).unloadScene === 'function') {
+      (coordinator as { unloadScene: (name: string) => void }).unloadScene(bundleName);
+    }
   };
 
   const isLoaded = (bundleName: string) =>
@@ -187,6 +202,7 @@ export function createCoordinatorFacade(manifest: Manifest): AssetCoordinatorFac
 
   return {
     loadingStateSignal: coordinator.loadingState,
+    loadingState: () => coordinator.loadingState.get(),
     ready: readySignal,
     gpuReady: gpuReadySignal,
     isLoaded,
@@ -204,6 +220,7 @@ export function createCoordinatorFacade(manifest: Manifest): AssetCoordinatorFac
     loadScene,
 
     initGpu,
+    getGpuLoader: <T = unknown>() => coordinator.getLoader('gpu') as T | null,
     unloadBundle,
     unloadBundles,
     unloadScene,
@@ -227,5 +244,9 @@ export function createCoordinatorFacade(manifest: Manifest): AssetCoordinatorFac
     },
 
     getLoader: <T>(type: LoaderType) => coordinator.getLoader(type) as T | null,
+
+    dispose: () => {
+      coordinator.dispose();
+    },
   };
 }

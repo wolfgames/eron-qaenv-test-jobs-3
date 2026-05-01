@@ -1,4 +1,5 @@
 import type { GameTuningBase } from '~/core/systems/tuning/types';
+import type { MysteryMunchiesTuning } from '~/game/mystery-munchies/tuning/gameTuning';
 
 // ============================================
 // GAME TUNING TYPES — Template
@@ -20,11 +21,15 @@ export interface GameScreensConfig {
 export interface GameTuning extends GameTuningBase {
   devMode: DevModeConfig;
   screens: GameScreensConfig;
+  /** Mystery Munchies game-specific tuning constants. */
+  mysteryMunchies?: MysteryMunchiesTuning;
 }
 
 // ============================================
 // DEFAULT VALUES
 // ============================================
+
+import { GAME_DEFAULTS as MM_DEFAULTS } from '~/game/mystery-munchies/tuning/gameTuning';
 
 export const GAME_DEFAULTS: GameTuning = {
   version: '1.0.0',
@@ -32,9 +37,10 @@ export const GAME_DEFAULTS: GameTuning = {
     skipStartScreen: false,
   },
   screens: {
-    startBackgroundColor: '#BCE083',
-    loadingBackgroundColor: '#BCE083',
+    startBackgroundColor: '#5B3A8A',
+    loadingBackgroundColor: '#5B3A8A',
   },
+  mysteryMunchies: MM_DEFAULTS,
 };
 
 // ============================================

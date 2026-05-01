@@ -1,0 +1,699 @@
+# gdd-analysis.yml — Structured feature delta
+# Written by phase 20 (analyze). Read by plan, implement, player-flow, stabilize.
+# Game: Mystery Munchies: Scooby's Bubble Pop
+# Pass: core
+
+game: "Mystery Munchies: Scooby's Bubble Pop"
+counts:
+  exists: 4
+  partial: 1
+  new: 18
+  conflict: 3
+  content_gap: 3
+conflict_breakdown:
+  reuse: 0
+  adapt: 3
+  replace: 0
+high_risk: 5
+open_questions: 4
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURE LIST
+# ─────────────────────────────────────────────────────────────────────────────
+
+features:
+
+  # ── EXISTS features ──────────────────────────────────────────────────────
+
+  - id: screen-routing
+    name: "Screen routing system (loading → start → game → results)"
+    status: exists
+    lifecycle_phase: BOOT
+    risk: LOW
+    complexity: low
+    cos_required: []
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - src/core/systems/screens/manager.ts
+      - src/core/systems/screens/context.tsx
+    dependencies: []
+    notes: "Scaffold routing supports exactly loading|start|game|results. Matches lifecycle.md screen ID map. No changes needed for core pass."
+
+  - id: loading-screen-infra
+    name: "Loading screen with bundle progress tracking"
+    status: exists
+    lifecycle_phase: BOOT
+    risk: LOW
+    complexity: low
+    cos_required: []
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [progress-bar]
+    affected_files:
+      - src/game/screens/LoadingScreen.tsx
+    dependencies: [screen-routing]
+    notes: "Infrastructure exists and works. Content is content-gap (generic spinner + plain bar vs GDD-spec Scooby silhouette + bone progress bar). Content gap tracked separately as loading-screen-theme."
+
+  - id: results-screen-infra
+    name: "Results screen infrastructure (score display, play-again / main-menu)"
+    status: exists
+    lifecycle_phase: OUTCOME
+    risk: LOW
+    complexity: low
+    cos_required: [scoring]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [play-again-btn, main-menu-btn]
+      feedback_surfaces: [score-display]
+    affected_files:
+      - src/game/screens/ResultsScreen.tsx
+    dependencies: [screen-routing, game-state-signals]
+    notes: "Infrastructure exists. Content is content-gap: shows 'Game Over' text and raw score — GDD requires win/loss branches, star display, Scooby animation, clue-progress, and loss-continuation options. Content gap tracked as results-screen-theme."
+
+  - id: tuning-system
+    name: "Tuning system"
+    status: exists
+    lifecycle_phase: null
+    risk: LOW
+    complexity: low
+    cos_required: []
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - src/game/tuning/index.ts
+      - src/game/tuning/types.ts
+    dependencies: []
+    notes: "Generic tuning infrastructure. No game-specific keys yet — those are new features."
+
+  # ── PARTIAL features ─────────────────────────────────────────────────────
+
+  - id: game-state-signals
+    name: "Game state signals (score, level)"
+    status: partial
+    lifecycle_phase: PLAY
+    risk: LOW
+    complexity: low
+    cos_required: [scoring]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - src/game/state.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: []
+    ux:
+      discovery: "HUD reads signals; not player-visible directly"
+      feedback: "Score and level changes propagate to HUD display"
+      onboarding: "n/a — internal infrastructure"
+    notes: "Score and level signals exist. GDD requires ECS as source of truth (bridgeEcsToSignals pattern). Missing: tapsRemaining, starsEarned, mysteryMeterProgress, goalProgress. ECS plugin does not exist yet."
+
+  # ── CONTENT-GAP features ─────────────────────────────────────────────────
+
+  - id: loading-screen-theme
+    name: "Loading screen visual theme (Scooby silhouette, bone progress bar, Mystery Inc. logo)"
+    status: content-gap
+    lifecycle_phase: BOOT
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [progress-bar, brand-logo]
+    affected_files:
+      - src/game/screens/LoadingScreen.tsx
+    dependencies: [loading-screen-infra, asset-bundle-branding]
+    ux:
+      discovery: "Player sees loading screen first — sets tone and brand"
+      feedback: "Bone-shaped bar animates left-to-right during load"
+      onboarding: "Implicit — establishes Scooby-Doo context before Title"
+    notes: "Infrastructure exists but shows generic spinner/bar. GDD specifies Scooby silhouette running, bone-shaped progress bar, Mystery Inc. logo fade-in. Background: psychedelic 70s."
+
+  - id: start-screen-theme
+    name: "Title/Start screen visual and interactivity (Mystery Machine, haunted manor, Scooby peek, Start Adventure / Continue)"
+    status: content-gap
+    lifecycle_phase: TITLE
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [start-adventure-btn, continue-btn]
+      feedback_surfaces: [title-logo, character-animation]
+    affected_files:
+      - src/game/mygame/screens/startView.ts
+      - src/game/screens/StartScreen.tsx
+    dependencies: [screen-routing]
+    ux:
+      discovery: "Two clearly labeled buttons — Start Adventure (new) and Continue (returning)"
+      feedback: "Title logo pulses, Scooby peeks from behind van"
+      onboarding: "First-time players tap Start Adventure; returning players tap Continue"
+    notes: "Infrastructure exists (startView.ts stub). Content is generic 'Start Screen' with plain Play button. GDD requires full Scooby-branded title screen. Buttons must be bottom-zone per UX guidelines."
+
+  - id: results-screen-theme
+    name: "Results screen win/loss branches (stars, Scooby animation, clue progress, loss continuation options)"
+    status: content-gap
+    lifecycle_phase: OUTCOME
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas, scoring, animated-dynamics]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [next-level-btn, watch-ad-btn, use-snacks-btn, try-again-btn, retreat-btn]
+      feedback_surfaces: [star-display, scooby-animation, clue-progress-bar, score-display]
+    affected_files:
+      - src/game/screens/ResultsScreen.tsx
+    dependencies: [screen-routing, game-state-signals, scoring-formula, star-rating]
+    ux:
+      discovery: "Win branch shows stars + Next Level; loss branch shows three recovery options"
+      feedback: "Scooby does happy dance (win) or dejected but not defeated (loss); Shaggy line on loss; 'Zoinks! We almost had it!'"
+      onboarding: "Loss screen teaches continue mechanic (ad/currency/retry) first encounter"
+    notes: "GDD specifies win/loss branch split inside results screen. Loss screen never says 'You lose' or 'Game Over'. Win: stars animate staggered, Scooby victory dance. Loss: three options animate in staggered 100ms each. Board state preserved for ad/currency path."
+
+  # ── NEW features ─────────────────────────────────────────────────────────
+
+  - id: game-controller-pixi
+    name: "GameController — Pixi initialization, layer setup, ECS wiring"
+    status: new
+    lifecycle_phase: PLAY
+    risk: HIGH
+    complexity: high
+    cos_required: [core-interaction, animated-dynamics, canvas]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: [board-grid]
+      feedback_surfaces: [gpu-canvas]
+    affected_files:
+      - <game-root>/GameController.ts
+      - <game-root>/index.ts
+    dependencies: [ecs-plugin, board-renderer, hud-renderer]
+    ux:
+      discovery: "n/a — bootstrap infrastructure"
+      feedback: "GPU canvas appears; board renders after init"
+      onboarding: "Tutorial levels use same controller with constrained initial state"
+    notes: "Replaces DOM-mode stub in mygame/screens/gameController.ts. Must: init Pixi Application, create bg/board/hud/ui layers, instantiate ECS plugin, call setActiveDb+bridgeEcsToSignals, wire pointertap input. Risk HIGH — central integration point, every downstream feature depends on it. touch-action:none on game container required (mobile-constraints rule)."
+
+  - id: ecs-plugin
+    name: "ECS plugin (GamePlugin) — resources, components, transactions, actions"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: high
+    cos_required: [core-interaction, scoring, animated-dynamics]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - <game-root>/state/GamePlugin.ts
+      - <game-root>/state/types.ts
+      - src/core/systems/ecs/index.ts
+    dependencies: []
+    ux:
+      discovery: "n/a — state layer; no direct player-facing surface"
+      feedback: "bridgeEcsToSignals propagates state changes to HUD signals"
+      onboarding: "n/a"
+    notes: "Resources needed: score, tapsRemaining, starsEarned, mysteryMeterProgress, boardPhase (idle|animating-pop|animating-fall|animating-chain|animating-cascade|won|lost|paused), level, chapter, clearedCells, totalNonBlockerCells. Components: cellKind, cellColor, cellRow, cellCol, blockerHits. Plugin property order enforced: extends→services→components→resources→archetypes→computed→transactions→actions→systems."
+
+  - id: bubble-grid
+    name: "8×10 bubble grid — rendering, layout, scaling"
+    status: new
+    lifecycle_phase: PLAY
+    risk: HIGH
+    complexity: high
+    cos_required: [canvas, core-interaction, animated-dynamics]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: [board-cell]
+      feedback_surfaces: [board, bubbles]
+    affected_files:
+      - <game-root>/renderers/BoardRenderer.ts
+      - <game-root>/renderers/BubbleRenderer.ts
+    dependencies: [game-controller-pixi, ecs-plugin]
+    ux:
+      discovery: "Board fills center 70% of portrait viewport; bubbles are large and colorful — immediately obvious"
+      feedback: "Tap produces cluster pop animation; invalid tap produces wobble"
+      onboarding: "Tutorial levels use simplified 8×4 grid with guided highlights"
+    notes: "Grid: 8 columns × 10 rows. Fills center 70% of portrait viewport (~375×520 logical pts on 390-wide screen). Min 44×44 pt tap target per cell (visual diameter ~42 pt padded to 44 pt). Must scale proportionally to device width. Bubbles: translucent sphere with ghost face, tinted to color, blacklight glow. Cell types: normal, empty (gravity fill), locked (blocker), clue (rows 7–10 background). Gravity: downward (toward row 10)."
+
+  - id: cluster-pop-mechanic
+    name: "Cluster pop mechanic — tap detection, cluster flood-fill, simultaneous removal"
+    status: new
+    lifecycle_phase: PLAY
+    risk: HIGH
+    complexity: high
+    cos_required: [core-interaction, animated-dynamics, scoring]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: [board-cell]
+      feedback_surfaces: [board, bubbles, score-hud, tap-counter-hud]
+    affected_files:
+      - <game-root>/logic/clusterLogic.ts
+      - <game-root>/state/GamePlugin.ts
+      - <game-root>/renderers/BoardRenderer.ts
+    dependencies: [bubble-grid, ecs-plugin]
+    ux:
+      discovery: "Glowing bubbles signal interactivity; tutorial level 1 uses guided hand icon"
+      feedback: "300ms dissolve per bubble (staggered 20ms), max 500ms total. 'bloop' audio + smoke wisp upward."
+      onboarding: "Tutorial level 1: large clusters, guided hand icon, narration from Scooby"
+    notes: "Primary interaction is TAP (not swap). Cluster = contiguous group ≥2 same-color orthogonally connected. Lone bubble: invalid — wobble animation, no tap consumed. Tap queued during pop animation; tap ignored during gravity fill. Input blocked in Won/Lost/Paused states. Interaction archetype doc required before implementation (CoS core-interaction exit criterion)."
+
+  - id: gravity-fill
+    name: "Gravity fill — bubbles fall downward, optional column refill from top"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: med
+    cos_required: [animated-dynamics]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [board, bubbles]
+    affected_files:
+      - <game-root>/logic/gravityLogic.ts
+      - <game-root>/renderers/BoardRenderer.ts
+    dependencies: [bubble-grid, ecs-plugin]
+    ux:
+      discovery: "Bubbles visibly fall after each pop — physically intuitive"
+      feedback: "250ms per row of fall distance, power2.out easing. Refill: 150ms per bubble, staggered 30ms."
+      onboarding: "n/a — self-evident from first pop"
+    notes: "Gravity: downward (row 10 = bottom). After pop, empty cells filled by bubbles above in same column. Refill enabled/disabled per level config. Refill = new random-colored bubbles cascade from top if column height < 3 AND refill enabled. Tap debounced during fall animation. Stable identity principle: same bubble entity repositioned, not destroyed+recreated."
+
+  - id: power-bubbles
+    name: "Power bubbles — Scooby Snack Bomb (5-6), Mystery Machine Blast (7-8), Unmasking Orb (9+)"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: high
+    cos_required: [animated-dynamics, core-interaction, scoring]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: [board-cell]
+      feedback_surfaces: [board, bubbles, vfx-layer]
+    affected_files:
+      - <game-root>/logic/powerBubbleLogic.ts
+      - <game-root>/renderers/PowerBubbleRenderer.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [cluster-pop-mechanic, gravity-fill]
+    ux:
+      discovery: "Visually distinctive shapes (bone, van, orb) land after large clusters — hard to miss"
+      feedback: "Each power type has distinct VFX: 3×3 blast, cross-pattern, color-clear sweep"
+      onboarding: "Tutorial level 2 deliberately creates a Scooby Snack Bomb with guided 6-bubble cluster"
+    notes: "Power Bubbles spawn when cluster size ≥5: replace a random member of the popped cluster. Activate when tapped as part of any valid cluster (≥2). Chain reactions: if power bubble swept by another, activates immediately. Max chain depth 3. Cannot activate on empty tap. Does not auto-activate after gravity landing."
+
+  - id: blocker-entities
+    name: "Blocker entities — Ghost Barrier (2-hit adjacent) and Crate Blocker (power-only)"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas, animated-dynamics]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [board, bubbles]
+    affected_files:
+      - <game-root>/logic/blockerLogic.ts
+      - <game-root>/renderers/BlockerRenderer.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [bubble-grid, ecs-plugin, cluster-pop-mechanic, power-bubbles]
+    ux:
+      discovery: "Visually distinctive: Ghost Barrier = locked ghost in dark bubble with chains; Crate = wooden box with spooky stencil"
+      feedback: "Hit feedback: rattle/crack animation. Destruction: burst effect."
+      onboarding: "Ghost Barrier introduced Chapter 3; Crate Blocker Chapter 5 (per GDD difficulty table)"
+    notes: "Ghost Barrier: untappable directly. Destroyed by 2 adjacent-cluster-pop hits (orthogonal only — diagonal ignored). Crate Blocker: immovable, not subject to gravity, only destroyable by Power Bubble explosion. Chapter 5+. Crate blocking bottom row prevents clue reveal."
+
+  - id: mystery-meter
+    name: "Mystery Meter — fills as clues reveal, charges narrative progression"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas, animated-dynamics, scoring]
+    ux_zones:
+      thumb_zone: center top
+      touch_targets: []
+      feedback_surfaces: [hud-top, mystery-meter-bar]
+    affected_files:
+      - <game-root>/renderers/HudRenderer.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [ecs-plugin, clue-fragment, game-controller-pixi]
+    ux:
+      discovery: "Meter visible in top HUD; fills progressively as rows clear"
+      feedback: "Shimmer animation fills to 100% at win; triggers clue reveal sequence"
+      onboarding: "Tutorial suppresses progress bar; introduced in Chapter 1"
+    notes: "Mystery Meter is a GPU HUD element (top of viewport). Fills as clue cells in rows 7–10 are revealed. At win: fills to 100% with shimmer animation (300ms). Placed in top HUD (low thumb-zone priority — passive/glanceable info only, not interactive)."
+
+  - id: clue-fragment
+    name: "Clue fragment — visual reveal in rows 7–10 as bubbles clear"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas, animated-dynamics]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [board-background, clue-layer]
+    affected_files:
+      - <game-root>/renderers/ClueRenderer.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [bubble-grid, level-generation]
+    ux:
+      discovery: "Parchment illustration visible beneath cleared bubbles — reveals organically"
+      feedback: "Parchment-unfurl animation (500ms) at full reveal. Triggers Mystery Meter fill."
+      onboarding: "n/a — visual reward, no action required"
+    notes: "Clue cells in rows 7–10 (background layer). Not interactive entities. Revealed progressively as bubbles above are cleared. Fetched from chapter static asset bundle. If level ends before full reveal: results screen shows at 30% opacity with 'Keep Playing to Reveal' prompt."
+
+  - id: scooby-companion
+    name: "Scooby-Doo companion — real-time reactions (audio barks, animation)"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: med
+    cos_required: [animated-dynamics, canvas]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: []
+      feedback_surfaces: [companion-sprite, audio-channel]
+    affected_files:
+      - <game-root>/renderers/CompanionRenderer.ts
+      - <game-root>/audio/companionAudio.ts
+      - src/game/audio/manager.ts
+    dependencies: [game-controller-pixi, game-audio]
+    ux:
+      discovery: "Scooby sprite visible in bottom area during gameplay — reacts to every pop"
+      feedback: "Audio bark + animation on every pop. Victory: happy bark + tail wag + Scooby Snack catch (1.5s). Sad: drooping ears + quiet whimper (1s)."
+      onboarding: "Tutorial level 1: Scooby narrates ('Ruh-roh! Pop those bubbles, Raggy!')"
+    notes: "Scooby sprite occupies bottom area of gameplay screen (below 8×10 grid). Reacts to every pop with in-character audio barks and animation. Win sequence: happy bark, tail wag, Scooby Snack catch. Loss sequence: drooping ears, quiet whimper. Tutorial: narration via Scooby dialogue. Audio unlock must happen before any Scooby audio plays (mobile-constraints rule)."
+
+  - id: scoring-formula
+    name: "Scoring formula — cluster-size base, chain multiplier, efficiency bonus"
+    status: new
+    lifecycle_phase: PLAY
+    risk: LOW
+    complexity: med
+    cos_required: [scoring]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: [score-hud, results-screen]
+    affected_files:
+      - <game-root>/logic/scoringLogic.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [ecs-plugin, cluster-pop-mechanic]
+    ux:
+      discovery: "Score visible in HUD; increases visibly after each pop"
+      feedback: "Score delta animation on HUD after each pop"
+      onboarding: "n/a — intuitive; larger cluster = more points"
+    notes: "GDD specifies: score = cluster-size base × chain-depth multiplier + power-bubble bonus (CoS scoring shape). Star rating (1–3) based on efficiency (taps used vs limit) — cosmetic only, no score modifier. Formula must produce multiplicative spread for leaderboard striation (CoS scoring). Chain depth tracked as resource in ECS. Power bubble bonus flat value."
+
+  - id: star-rating
+    name: "Star rating — 1–3 stars based on efficiency at level completion"
+    status: new
+    lifecycle_phase: OUTCOME
+    risk: LOW
+    complexity: low
+    cos_required: [scoring]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: []
+      feedback_surfaces: [results-screen, star-indicators]
+    affected_files:
+      - <game-root>/logic/starLogic.ts
+      - <game-root>/state/GamePlugin.ts
+    dependencies: [scoring-formula, ecs-plugin]
+    ux:
+      discovery: "Stars animate staggered in win sequence (200ms each)"
+      feedback: "Visual: stars pop in one-by-one. Audio: distinct sound per star earned."
+      onboarding: "First seen after Tutorial Level 1 completion"
+    notes: "1–3 stars based on tap efficiency (taps used vs tap limit). Cosmetic only — no score modifier. Win sequence step 7: 1–3 stars animate in one by one (200ms each). Stars also displayed in Chapter Complete screen (chapter summary)."
+
+  - id: level-generation
+    name: "Level generation system — hybrid hand-crafted (L1-15) + seeded procedural (L16+)"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: high
+    cos_required: [core-interaction, scoring]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - <game-root>/logic/levelGenerator.ts
+      - <game-root>/logic/solvabilityChecker.ts
+      - <game-root>/data/levels/hand-crafted/level-001.json
+      - <game-root>/data/difficultyTable.ts
+      - tests/levelGenerator.test.ts
+    dependencies: [ecs-plugin, bubble-grid, blocker-entities, clue-fragment]
+    ux:
+      discovery: "n/a — backend system; player sees board layout"
+      feedback: "n/a"
+      onboarding: "n/a"
+    notes: "Levels 1–15: hand-crafted JSON in data/levels/hand-crafted/ (level-001.json through level-015.json). L16+: seeded procedural via Mulberry32 LCG. Seed = (levelNumber * 73856093) XOR (chapterNumber * 19349663). 7-step gen algorithm: seed resolution → difficulty lookup → color assignment → grid fill → solvability check → power injection → clue placement. Solvability: greedy simulation. Retry: up to 10 attempts with seed+attempt. Fallback: reduce blockers 50% then pre-validated hand-crafted fallback pool. RNG is seeded — no Math.random() (ECS action purity rule)."
+
+  - id: tap-counter-system
+    name: "Tap counter — remaining taps HUD, tap consumption, zero triggers loss"
+    status: new
+    lifecycle_phase: PLAY
+    risk: MEDIUM
+    complexity: low
+    cos_required: [core-interaction, animated-dynamics]
+    ux_zones:
+      thumb_zone: center top
+      touch_targets: []
+      feedback_surfaces: [hud-top, tap-counter]
+    affected_files:
+      - <game-root>/state/GamePlugin.ts
+      - <game-root>/renderers/HudRenderer.ts
+    dependencies: [ecs-plugin, cluster-pop-mechanic]
+    ux:
+      discovery: "Tap counter visible in top HUD — decrements after each valid cluster pop"
+      feedback: "Counter updates immediately after valid pop. At 0: loss sequence auto-triggers."
+      onboarding: "Tap counter suppressed during tutorial levels (per GDD)"
+    notes: "Taps consumed only by valid cluster pops (not invalid lone-bubble taps). Range: 12–30 per level per difficulty table. Decrement transaction in ECS. When tapsRemaining==0 AND board==Idle AND winCondition==false: trigger loss sequence. Loss check runs only when board reaches Idle."
+
+  - id: win-loss-sequences
+    name: "Win and loss sequences — ordered animation steps, board state transitions"
+    status: new
+    lifecycle_phase: OUTCOME
+    risk: MEDIUM
+    complexity: high
+    cos_required: [animated-dynamics, core-interaction, canvas, scoring]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [next-level-btn, retry-btn]
+      feedback_surfaces: [board, companion-sprite, mystery-meter, clue-layer, star-display, results-overlay]
+    affected_files:
+      - <game-root>/GameController.ts
+      - <game-root>/renderers/BoardRenderer.ts
+      - <game-root>/renderers/CompanionRenderer.ts
+      - <game-root>/renderers/HudRenderer.ts
+    dependencies: [game-controller-pixi, ecs-plugin, scoring-formula, star-rating, scooby-companion, mystery-meter, clue-fragment]
+    ux:
+      discovery: "Win/loss states are unambiguous — board locks, Scooby reacts, overlay appears"
+      feedback: "Win: 10-step ordered sequence (Mystery Meter fill → clue reveal → stars → Scooby victory → Level Complete screen). Loss: 8-step sequence (Scooby sad → partial clue at 30% → Loss screen slides up → options stagger in)."
+      onboarding: "n/a — end-of-level reward sequence"
+    notes: "Win sequence must be strictly ordered per GDD (10 steps). Loss: board state preserved for ad/currency continuation path. Board state ECS snapshot saved before entering Lost state. Screen transitions to results screen which branches win/loss."
+
+  - id: game-audio
+    name: "Game audio system — sfx, music, character barks"
+    status: new
+    lifecycle_phase: PLAY
+    risk: LOW
+    complexity: med
+    cos_required: [animated-dynamics]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: [audio-channel]
+    affected_files:
+      - src/game/audio/manager.ts
+      - src/game/audio/sounds.ts
+      - src/game/asset-manifest.ts
+    dependencies: []
+    ux:
+      discovery: "n/a — audio is supplementary to visual"
+      feedback: "Bloop sound on bubble pop. Distinct bark per Scooby state. Win fanfare. Loss whimper."
+      onboarding: "Audio unlock required on first user interaction (mobile-constraints rule)"
+    notes: "GameAudioManager stub exists (playButtonClick only). Needs game-specific methods: playBubblePop, playPowerBubbleActivate, playChainReaction, playScoobyBark(state), playWinFanfare, playLossWhimper, playScoobySnackCollect. Audio bundle: audio-sfx-mysterymunchies, audio-music-mysterymunchies. Audio unlock: called in startView on first play button tap."
+
+  - id: asset-bundle-game
+    name: "Asset bundles — scene-*, fx-*, audio-* for game sprites and audio"
+    status: new
+    lifecycle_phase: null
+    risk: LOW
+    complexity: low
+    cos_required: [canvas]
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - src/game/asset-manifest.ts
+    dependencies: []
+    notes: "Manifest stub has only theme-branding bundle. Needs: scene-bubbles (bubble sprites atlas), scene-blockers (Ghost Barrier + Crate Blocker), scene-ui (HUD elements, Mystery Meter, companion), fx-pop (pop VFX), fx-power (power bubble VFX), audio-sfx-mysterymunchies, audio-music-mysterymunchies, data-levels (hand-crafted level JSONs). Bundle naming: scene-*/fx-*/audio-*/data-* prefixes only (asset-bundles rule: theme-* for DOM only)."
+
+  - id: tuning-game-specific
+    name: "Game-specific tuning keys (difficulty table, animation timings, score formula params)"
+    status: new
+    lifecycle_phase: null
+    risk: LOW
+    complexity: low
+    cos_required: []
+    ux_zones:
+      thumb_zone: null
+      touch_targets: []
+      feedback_surfaces: []
+    affected_files:
+      - src/game/tuning/types.ts
+      - <game-root>/tuning/gameTuning.ts
+    dependencies: [tuning-system]
+    notes: "Tuning infrastructure exists. Needs game keys: popDuration, fallDuration, refillDuration, chainMax, popBasePts, chainMultiplierBase, powerBubbleBonus, starThresholds, difficultyTable (per chapter). All as GAME_DEFAULTS constants."
+
+  # ── CONFLICT features ─────────────────────────────────────────────────────
+
+  - id: start-screen-controller-conflict
+    name: "Start screen controller (DOM stub vs Pixi/GPU start screen)"
+    status: conflict
+    lifecycle_phase: TITLE
+    risk: MEDIUM
+    complexity: med
+    cos_required: [canvas]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [start-adventure-btn, continue-btn]
+      feedback_surfaces: [title-logo, mystery-machine, scooby-sprite]
+    affected_files:
+      - src/game/mygame/screens/startView.ts
+      - src/game/screens/StartScreen.tsx
+    dependencies: [screen-routing]
+    ux:
+      discovery: "Start Adventure and Continue buttons must be in thumb-zone (bottom area)"
+      feedback: "Title logo pulses; Mystery Machine animated; Scooby peeks"
+      onboarding: "First-time intro cutscene triggered from this screen"
+    notes: "Existing startView.ts uses DOM createElement — all game visuals are GPU after initGpu(). GDD requires animated Pixi start screen (Mystery Machine, Scooby sprite). sub: adapt — preserve initGpu/unlockAudio/loadCore call sequence; replace DOM createElement with Pixi scene graph."
+
+  - id: game-controller-stub-conflict
+    name: "Game controller stub (DOM mode → Pixi GameController)"
+    status: conflict
+    lifecycle_phase: PLAY
+    risk: HIGH
+    complexity: high
+    cos_required: [core-interaction, animated-dynamics, canvas]
+    ux_zones:
+      thumb_zone: center
+      touch_targets: [board-grid]
+      feedback_surfaces: [gpu-canvas, board, hud]
+    affected_files:
+      - src/game/mygame/screens/gameController.ts
+      - src/game/mygame/index.ts
+      - src/game/screens/GameScreen.tsx
+    dependencies: [game-controller-pixi, ecs-plugin]
+    ux:
+      discovery: "n/a — bootstrap"
+      feedback: "GPU canvas replaces DOM stub; board visible immediately after init"
+      onboarding: "n/a"
+    notes: "Current gameController.ts creates DOM div — violates guardrail #1 (no DOM in GPU game code) once initGpu() has fired. GDD requires full Pixi game. sub: adapt — preserve exported setupGame() contract and GameControllerDeps type; replace implementation with Pixi Application + ECS wiring."
+
+  - id: results-screen-conflict
+    name: "Results screen 'Game Over' text vs GDD win/loss branch copy"
+    status: conflict
+    lifecycle_phase: OUTCOME
+    risk: LOW
+    complexity: low
+    cos_required: [canvas]
+    ux_zones:
+      thumb_zone: center bottom
+      touch_targets: [next-level-btn, play-again-btn]
+      feedback_surfaces: [score-display, title-text]
+    affected_files:
+      - src/game/screens/ResultsScreen.tsx
+    dependencies: [game-state-signals, scoring-formula, star-rating]
+    ux:
+      discovery: "Win vs loss branch must be clearly differentiated"
+      feedback: "Win: celebratory. Loss: encouraging — never 'Game Over' or 'You Lose'."
+      onboarding: "n/a"
+    notes: "ResultsScreen.tsx has hardcoded 'Game Over' text — GDD explicitly forbids this copy. Loss screen: Shaggy says 'Zoinks! We almost had it!' (not 'Game Over'). sub: adapt — preserve navigation contract; change copy and add win/loss branch logic."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFLICT SUB-CLASSIFICATIONS
+# ─────────────────────────────────────────────────────────────────────────────
+
+conflicts:
+  - id: start-screen-controller-conflict
+    sub: adapt
+    reason: "Preserve initGpu/unlockAudio/loadCore call sequence and exported contract; replace DOM createElement body with Pixi scene graph."
+
+  - id: game-controller-stub-conflict
+    sub: adapt
+    reason: "Preserve exported setupGame() contract and GameControllerDeps wiring; replace DOM createElement implementation with Pixi Application + ECS plugin init."
+
+  - id: results-screen-conflict
+    sub: adapt
+    reason: "Preserve screen navigation contract (goto calls); change copy, add win/loss branch split, add star display and Scooby animation."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RISK AREAS
+# ─────────────────────────────────────────────────────────────────────────────
+
+risk_areas:
+  - feature: game-controller-pixi
+    reason: "Central integration point — all GPU rendering, ECS wiring, input routing, and layer management converge here. Every downstream feature depends on this being correct first."
+
+  - feature: bubble-grid
+    reason: "Viewport layout owner — 8×10 grid defines the canvas budget. Affects HUD placement, companion placement, and the 44pt tap-target floor. Changes here cascade to all renderers."
+
+  - feature: cluster-pop-mechanic
+    reason: "Primary interaction — the one gesture the entire game is built on. Input blocking, animation lock, queue vs ignore, and solvability all depend on correct state management here."
+
+  - feature: win-loss-sequences
+    reason: "Strictly ordered 8–10-step animation sequences across multiple renderers. ECS state transitions must match lifecycle.md board states. Board preservation for loss continuation is cross-cutting."
+
+  - feature: level-generation
+    reason: "Touches grid dimensions, blocker placement, color distribution, solvability simulation, and fallback handling. Seeded RNG must not use Math.random(). 7-step pipeline with retry logic."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPEN QUESTIONS
+# ─────────────────────────────────────────────────────────────────────────────
+
+open_questions:
+  - id: q-game-name
+    question: "What is the game slug (folder name under src/game/)?"
+    context: "GDD title is 'Mystery Munchies: Scooby's Bubble Pop'. Slug candidates: mysterymunchies, mystery-munchies, scooby-bubblepop. Plan must resolve this to substitute <game-root>."
+    options: ["mysterymunchies", "mystery-munchies"]
+
+  - id: q-hand-crafted-level-format
+    question: "What is the exact JSON schema for hand-crafted level files (level-001.json through level-015.json)?"
+    context: "GDD specifies files live in src/game/<slug>/data/levels/hand-crafted/ but does not define the JSON schema. Level generator output shape and level loader must agree on schema."
+    options: []
+
+  - id: q-continue-system-ad-integration
+    question: "Is ad integration (Watch Ad → +5 taps) in scope for core pass?"
+    context: "GDD specifies 'Watch a Short Clip' as a loss-continuation option. Ad SDK integration is typically outside a core game pass. If out of scope, the button must exist but be non-functional (stub is a guardrail #15 violation — must clarify)."
+    options: ["stub-disabled-btn-with-note", "full-ad-integration", "omit-for-core-pass"]
+
+  - id: q-scooby-snack-currency
+    question: "Is the Scooby Snack in-game currency wallet (token collection, spend on +5 taps) in scope for core pass?"
+    context: "GDD describes floating bone biscuit tokens collectible within 3 seconds post-combo, plus spending them for continues. Persistence and wallet state are meta/progression concerns. Core pass may implement the visual token without currency persistence."
+    options: ["visual-only-no-wallet", "full-wallet-core-pass", "defer-to-meta-pass"]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COLLISION WARNINGS
+# ─────────────────────────────────────────────────────────────────────────────
+
+warnings:
+  - "collision:game-controller-dom — gdd=pixi-gpu-game vs scaffold=dom-mode-stub (src/game/mygame/screens/gameController.ts) — critical (guardrail #1: no DOM in GPU game code after initGpu)"
+  - "collision:start-screen-dom — gdd=animated-pixi-title vs scaffold=dom-createElement-stub (src/game/mygame/screens/startView.ts) — critical (guardrail #1: no DOM in GPU game code after initGpu)"
+  - "collision:results-copy — gdd='Zoinks! We almost had it!' vs scaffold='Game Over' (src/game/screens/ResultsScreen.tsx) — soft (copy conflict; plan should adapt)"
+  - "collision:screen-ids — gdd=chapter-start-interstitial,chapter-complete as distinct screens vs scaffold=valid-ids:loading|start|game|results (lifecycle.md § screen ID map) — critical (scaffold-state: valid screen IDs; interstitial must be overlay or branch within results)"
+  - "collision:ad-continuation — gdd=watch-ad-for-+5-taps vs skill=no-ad-sdk-in-scaffold — soft (ad integration unspecified; open question q-continue-system-ad-integration)"
+  # Note: bubble-tap-target — gdd=44pt-minimum matches skill=44×44px-floor (ux/core-guidelines.md) — values agree; no collision emitted.

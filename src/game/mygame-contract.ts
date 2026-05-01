@@ -37,6 +37,8 @@ export interface GameControllerDeps {
   audio: unknown;
   gameData: unknown;
   analytics: unknown;
+  /** Optional screen navigator. If provided, the controller can goto('results') on win/loss. */
+  goto?: (screen: string) => void;
 }
 
 export interface GameController {
