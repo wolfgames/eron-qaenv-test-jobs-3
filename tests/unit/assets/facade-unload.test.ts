@@ -82,8 +82,119 @@ vi.mock('@wolfgames/components/core', () => {
     };
   });
 
+  const createDomLoader = vi.fn(() => ({
+    init: vi.fn(),
+    loadBundle: vi.fn(async () => {}),
+    get: vi.fn(() => null),
+    getImage: vi.fn(() => null),
+    getSheet: vi.fn(() => null),
+    getSpritesheet: vi.fn(() => null),
+    getFrameURL: vi.fn(async () => 'blob:mock'),
+    has: vi.fn(() => false),
+    unloadBundle: vi.fn(),
+    dispose: vi.fn(),
+  }));
+
+  const createAssetCoordinator = vi.fn(({ manifest, loaders }: { manifest: unknown; loaders?: Record<string, unknown> }) => {
+    const loaded = new Set<string>();
+    const unloaded = new Set<string>();
+    const loaderMap: Record<string, unknown> = loaders || {};
+    const loadingStateSignalObj = {
+      get: () => ({
+        loading: [],
+        loaded: [...loaded],
+        backgroundLoading: [],
+        unloaded: [...unloaded],
+        errors: {},
+        bundleProgress: {},
+        progress: 0,
+      }),
+      set: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    return {
+      loadBundle: vi.fn(async (name: string) => { loaded.add(name); unloaded.delete(name); }),
+      loadBundles: vi.fn(async (names: string[]) => { for (const n of names) { loaded.add(n); unloaded.delete(n); } }),
+      backgroundLoadBundle: vi.fn(async () => {}),
+      preloadScene: vi.fn(async () => {}),
+      loadBoot: vi.fn(async () => { loaded.add('boot-splash'); }),
+      loadCore: vi.fn(async () => { loaded.add('core-ui'); }),
+      loadTheme: vi.fn(async () => { loaded.add('theme-branding'); }),
+      loadAudio: vi.fn(async () => { loaded.add('audio-sfx'); }),
+      loadScene: vi.fn(async (name: string) => { loaded.add(`scene-${name}`); }),
+      initGpu: vi.fn(async () => {}),
+      getLoadedBundles: vi.fn(() => [...loaded]),
+      isLoaded: vi.fn((name: string) => loaded.has(name)),
+      unloadBundle: vi.fn((name: string) => { loaded.delete(name); unloaded.add(name); }),
+      unloadBundles: vi.fn((names: string[]) => { for (const n of names) { loaded.delete(n); unloaded.add(n); } }),
+      unloadScene: vi.fn((sceneName: string) => {
+        const name = `scene-${sceneName}`;
+        loaded.delete(name);
+        unloaded.add(name);
+      }),
+      startBackgroundLoading: vi.fn(async () => {}),
+      loadingState: loadingStateSignalObj,
+      ready: { get: vi.fn(() => false), set: vi.fn(), subscribe: vi.fn(() => () => {}) },
+      gpuReady: { get: vi.fn(() => false), set: vi.fn(), subscribe: vi.fn(() => () => {}) },
+      dom: {
+        getFrameURL: vi.fn(async () => 'blob:mock'),
+        get: vi.fn(() => null),
+        getImage: vi.fn(() => null),
+        getSheet: vi.fn(() => null),
+        getSpritesheet: vi.fn(() => null),
+      },
+      getLoader: vi.fn((type: string) => loaderMap[type] || null),
+      initLoader: vi.fn((type: string, loader: unknown) => { loaderMap[type] = loader; }),
+      dispose: vi.fn(),
+      coordinator: {},
+      _loaders: loaders,
+      _loaded: loaded,
+      _unloaded: unloaded,
+    };
+  });
+
+  const createSignal = vi.fn((initial: unknown) => {
+    let value = initial;
+    const subscribers: ((v: unknown) => void)[] = [];
+    return {
+      get: () => value,
+      set: (newValue: unknown) => {
+        value = newValue;
+        subscribers.forEach(cb => cb(newValue));
+      },
+      subscribe: (cb: (v: unknown) => void) => {
+        subscribers.push(cb);
+        return () => {
+          const idx = subscribers.indexOf(cb);
+          if (idx >= 0) subscribers.splice(idx, 1);
+        };
+      },
+    };
+  });
+
+  const KIND_TO_LOADER = {
+    boot: 'dom',
+    theme: 'dom',
+    core: 'dom',
+    scene: 'gpu',
+    audio: 'audio',
+  };
+
+  const KIND_TO_PREFIX = {
+    boot: 'boot-',
+    theme: 'theme-',
+    core: 'core-',
+    scene: 'scene-',
+    audio: 'audio-',
+  };
+
   return {
     createAssetFacade,
+    createDomLoader,
+    createAssetCoordinator,
+    createSignal,
+    KIND_TO_LOADER,
+    KIND_TO_PREFIX,
     validateManifest: vi.fn(() => ({ valid: true, errors: [] })),
   };
 });

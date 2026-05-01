@@ -86,8 +86,12 @@ export class BoardRenderer {
     // Remove sprites for cells no longer present.
     for (const [key, entry] of this.cells) {
       if (!wanted.has(key)) {
-        if (entry.bubble) entry.bubble.destroy();
+        if (entry.bubble) {
+          gsap.killTweensOf(entry.bubble.container);
+          entry.bubble.destroy();
+        }
         if (entry.blocker) {
+          gsap.killTweensOf(entry.blocker);
           entry.blocker.parent?.removeChild(entry.blocker);
           entry.blocker.destroy();
         }
@@ -139,6 +143,7 @@ export class BoardRenderer {
       } else if (w.kind === CellKind.ghostBarrier || w.kind === CellKind.crateBlocker) {
         // Remove bubble visual if it transitioned to blocker.
         if (entry.bubble) {
+          gsap.killTweensOf(entry.bubble.container);
           entry.bubble.destroy();
           entry.bubble = null;
         }

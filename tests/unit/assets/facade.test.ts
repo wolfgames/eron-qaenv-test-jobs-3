@@ -47,8 +47,102 @@ vi.mock('@wolfgames/components/core', () => {
     };
   });
 
+  const createDomLoader = vi.fn(() => ({
+    init: vi.fn(),
+    loadBundle: vi.fn(async () => {}),
+    get: vi.fn(() => null),
+    getImage: vi.fn(() => null),
+    getSheet: vi.fn(() => null),
+    getSpritesheet: vi.fn(() => null),
+    getFrameURL: vi.fn(async () => 'blob:mock'),
+    has: vi.fn(() => false),
+    unloadBundle: vi.fn(),
+    dispose: vi.fn(),
+  }));
+
+  const createAssetCoordinator = vi.fn(({ manifest, loaders }: { manifest: unknown; loaders?: Record<string, unknown> }) => {
+    const loaded: string[] = [];
+    const loaderMap: Record<string, unknown> = loaders || {};
+    const loadingStateSignalObj = {
+      get: () => ({ loading: [], loaded, errors: {}, bundleProgress: {}, progress: 0, backgroundLoading: [], unloaded: [] }),
+      set: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    return {
+      loadBundle: vi.fn(async (name: string) => { loaded.push(name); }),
+      loadBundles: vi.fn(async (names: string[]) => { loaded.push(...names); }),
+      backgroundLoadBundle: vi.fn(async () => {}),
+      preloadScene: vi.fn(async () => {}),
+      loadBoot: vi.fn(async () => {}),
+      loadCore: vi.fn(async () => {}),
+      loadTheme: vi.fn(async () => {}),
+      loadAudio: vi.fn(async () => {}),
+      loadScene: vi.fn(async () => {}),
+      initGpu: vi.fn(async () => {}),
+      getLoadedBundles: vi.fn(() => loaded),
+      isLoaded: vi.fn((name: string) => loaded.includes(name)),
+      unloadBundle: vi.fn(),
+      unloadBundles: vi.fn(),
+      unloadScene: vi.fn(),
+      startBackgroundLoading: vi.fn(async () => {}),
+      loadingState: loadingStateSignalObj,
+      dom: {
+        getFrameURL: vi.fn(async () => 'blob:mock'),
+        get: vi.fn(() => null),
+        getImage: vi.fn(() => null),
+        getSheet: vi.fn(() => null),
+        getSpritesheet: vi.fn(() => null),
+      },
+      getLoader: vi.fn((type: string) => loaderMap[type] || null),
+      initLoader: vi.fn((type: string, loader: unknown) => { loaderMap[type] = loader; }),
+      dispose: vi.fn(),
+      coordinator: {},
+      _loaders: loaders,
+    };
+  });
+
+  const createSignal = vi.fn((initial: unknown) => {
+    let value = initial;
+    const subscribers: ((v: unknown) => void)[] = [];
+    return {
+      get: () => value,
+      set: (newValue: unknown) => {
+        value = newValue;
+        subscribers.forEach(cb => cb(newValue));
+      },
+      subscribe: (cb: (v: unknown) => void) => {
+        subscribers.push(cb);
+        return () => {
+          const idx = subscribers.indexOf(cb);
+          if (idx >= 0) subscribers.splice(idx, 1);
+        };
+      },
+    };
+  });
+
+  const KIND_TO_LOADER = {
+    boot: 'dom',
+    theme: 'dom',
+    core: 'dom',
+    scene: 'gpu',
+    audio: 'audio',
+  };
+
+  const KIND_TO_PREFIX = {
+    boot: 'boot-',
+    theme: 'theme-',
+    core: 'core-',
+    scene: 'scene-',
+    audio: 'audio-',
+  };
+
   return {
     createAssetFacade,
+    createDomLoader,
+    createAssetCoordinator,
+    createSignal,
+    KIND_TO_LOADER,
+    KIND_TO_PREFIX,
     validateManifest: vi.fn(() => ({ valid: true, errors: [] })),
   };
 });

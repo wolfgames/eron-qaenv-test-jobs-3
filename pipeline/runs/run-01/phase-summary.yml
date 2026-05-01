@@ -174,14 +174,21 @@ player_flow:
   carry_forward: {}
 
 verify:
-  status: pending
-  build: ""
-  tests_passing: 0
-  tests_total: 0
-  fix_cycles: 0
-  playability: ""
-  remaining_issues: []
-  carry_forward: {}
+  status: complete
+  build: pass
+  tests_passing: 235
+  tests_total: 235
+  fix_cycles: 1
+  playability: not-checked
+  remaining_issues:
+    - "browser-mcp-unavailable (smoke mode configured but MCP not available)"
+  carry_forward:
+    browser_verified: false
+    browser_verify_scope: smoke
+    unwinnable: null
+    perf_flags: []
+    guardrails_clean: true
+    content_fidelity_clean: true
 
 stabilize:
   status: pending

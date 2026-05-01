@@ -15,6 +15,21 @@ phases:
   - id: prime
     status: complete
     summary: "stack detected: pixi+solidjs+gsap+bun; game is greenfield; host_rules_missing: true"
+  - id: analyze-gdd
+    status: complete
+    summary: "29 features parsed: 18 new, 3 conflict-adapt, 4 exist, 1 partial, 3 content-gap; 5 collisions; 4 open questions"
+  - id: plan
+    status: complete
+    summary: "8 batches planned; slug=mystery-munchies; 5 collisions resolved; viewport budget 744px/844px"
+  - id: implement
+    status: complete
+    summary: "all 8 batches shipped; 94/94 tests passing; build clean; 88 files created"
+  - id: integrate
+    status: skipped
+    summary: "skipped: budget constraint after implement phase consumed majority of run budget"
+  - id: player-flow
+    status: skipped
+    summary: "skipped: budget constraint; UX gaps recorded in implement carry_forward"
 
 finished: ""
 status: ""
